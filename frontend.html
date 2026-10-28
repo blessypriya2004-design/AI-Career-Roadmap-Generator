@@ -14,7 +14,7 @@
       color: #222;
     }
     .container {
-      max-width: 600px;
+      max-width: 700px;
       margin: auto;
       background: white;
       padding: 25px;
@@ -39,35 +39,54 @@
       margin-top: 22px;
       cursor: pointer;
     }
-    #result { margin-top: 20px; white-space: pre-wrap; }
+    .week-card {
+      background: #f7f8ff;
+      border-left: 5px solid #4255c7;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+    .week-card h3 { color: #3347b0; margin-top: 0; }
+    .week-card li { margin: 9px 0; }
+    #result { margin-top: 25px; }
+    .message { padding: 12px; background: #eef2ff; border-radius: 8px; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>AI Career Roadmap Generator</h1>
     <p>Create your personal career roadmap.</p>
+
     <form id="careerForm">
-      <label>Your Name</label>
+      <label for="name">Your Name</label>
       <input id="name" placeholder="Enter your name" required>
-      <label>Career Goal</label>
+
+      <label for="goal">Career Goal</label>
       <input id="goal" placeholder="e.g. Python Developer" required>
-      <label>Current Skills</label>
+
+      <label for="skills">Current Skills</label>
       <input id="skills" placeholder="e.g. Python, HTML, CSS">
-      <label>Experience Level</label>
+
+      <label for="level">Experience Level</label>
       <select id="level">
         <option>Beginner</option>
         <option>Intermediate</option>
         <option>Advanced</option>
       </select>
+
       <button type="submit">Generate Roadmap</button>
     </form>
+
     <div id="result"></div>
   </div>
+
   <script>
     document.getElementById("careerForm").addEventListener("submit", async function(e) {
       e.preventDefault();
+
       const result = document.getElementById("result");
-      result.textContent = "Generating your roadmap...";
+      result.innerHTML = '<p class="message">Generating your roadmap...</p>';
+
       try {
         const response = await fetch("/generate", {
           method: "POST",
@@ -79,14 +98,60 @@
             level: document.getElementById("level").value
           })
         });
+
         const data = await response.json();
-        result.textContent = data.success
-          ? "Your career roadmap request was received!\n\n" + JSON.stringify(data.roadmap, null, 2)
-          : "Could not generate roadmap.";
+
+        if (!response.ok || !data.success) {
+          throw new Error("Could not generate roadmap.");
+        }
+
+        const roadmap = data.roadmap;
+
+        if (!roadmap.steps) {
+          result.innerHTML = '<p class="message">Request received, but roadmap steps were not returned.</p>';
+          return;
+        }
+
+        result.innerHTML = `
+          <h2>Your Career Roadmap</h2>
+          <p><strong>Goal:</strong> ${escapeHTML(roadmap.career_goal || "")}</p>
+          <p><strong>Level:</strong> ${escapeHTML(roadmap.current_level || "")}</p>
+          <p><strong>Skills:</strong> ${escapeHTML(roadmap.current_skills || "")}</p>
+        `;
+
+        roadmap.steps.forEach(step => {
+          const card = document.createElement("div");
+          card.className = "week-card";
+
+          const heading = document.createElement("h3");
+          heading.textContent = step.week + " — " + step.title;
+          card.appendChild(heading);
+
+          const list = document.createElement("ul");
+          (step.tasks || []).forEach(task => {
+            const item = document.createElement("li");
+            item.textContent = task;
+            list.appendChild(item);
+          });
+
+          card.appendChild(list);
+          result.appendChild(card);
+        });
+
       } catch (error) {
-        result.textContent = "Error connecting to the server. Please try again.";
+        result.innerHTML = '<p class="message">Error generating roadmap. Please try again.</p>';
       }
     });
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
   </script>
 </body>
 </html>
