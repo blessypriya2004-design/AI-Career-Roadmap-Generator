@@ -1,7 +1,7 @@
 from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 ROOT = Path(__file__).resolve().parent
-FRONTEND = ROOT / 'frontend'
+FRONTEND = ROOT
 app = Flask(__name__)
 
 ROLE_DATA = {
