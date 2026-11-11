@@ -1,4 +1,3 @@
-
 const form = document.querySelector('#career-form');
 const skills = document.querySelector('#skills');
 const hours = document.querySelector('#hours');
@@ -140,9 +139,10 @@ function render(data) {
         weeks.append(card);
     });
 
-    // Add progress checkboxes after creating weekly cards
+    // Add progress checkboxes
     addProgressCheckboxes(data);
 
+    // Display recommendations
     const list = document.querySelector('#recommendations');
     list.replaceChildren();
 
@@ -153,6 +153,41 @@ function render(data) {
     });
 
     document.querySelector('#note').textContent = data.note;
+
+    // Display AI-generated career guidance
+    let aiSection = document.querySelector('#ai-guidance');
+
+    if (!aiSection) {
+        aiSection = document.createElement('section');
+        aiSection.id = 'ai-guidance';
+        aiSection.className = 'ai-guidance';
+
+        const noteSection = document.querySelector('#note');
+        noteSection.parentNode.insertBefore(aiSection, noteSection);
+    }
+
+    aiSection.replaceChildren();
+
+    const aiTitle = document.createElement('h2');
+    aiTitle.textContent = 'AI Career Guidance';
+
+    const aiContent = document.createElement('p');
+    const guidance = data.ai_guidance ||
+    'AI guidance is not available right now.';
+
+const cleanGuidance = guidance.replace(/\\(?=\s|[.+])/g, '');
+aiContent.innerHTML = cleanGuidance
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.*)$/gm, '<h2>$1</h2>')
+    .replace(/^\s*[-*] (.*)$/gm, '• $1')
+    .replace(/\n/g, '<br>');
+    aiSection.append(aiTitle, aiContent);
 }
 
 // Generate roadmap form submission
@@ -258,6 +293,13 @@ document.querySelector('#download').addEventListener('click', () => {
     });
 
     addText(latest.note);
+
+    // Include AI guidance in downloaded PDF
+    if (latest.ai_guidance) {
+        y += 5;
+        addText('AI CAREER GUIDANCE');
+        addText(latest.ai_guidance);
+    }
 
     doc.save('PathPilot-Career-Roadmap.pdf');
 });
