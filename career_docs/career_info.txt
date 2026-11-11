@@ -1,0 +1,59 @@
+
+Python Career Guidance
+
+Python is a programming language used for web development, automation, data analysis and artificial intelligence.
+
+Python Full Stack Developer
+
+Required skills:
+Python, HTML, CSS, JavaScript, SQL, Flask, REST API and Git.
+
+Learning roadmap:
+1. Learn Python fundamentals and OOP.
+2. Learn HTML and CSS.
+3. Learn JavaScript.
+4. Learn SQL and database concepts.
+5. Learn Flask and REST APIs.
+6. Build and deploy a full-stack project.
+
+Beginner projects:
+Task Manager, Expense Tracker, Student Management System and Portfolio Website.
+
+Frontend Developer
+
+Required skills:
+HTML, CSS, JavaScript, Git, Responsive Design and REST API.
+
+Learning roadmap:
+1. Learn HTML.
+2. Learn CSS and responsive design.
+3. Learn JavaScript and DOM.
+4. Learn API integration.
+5. Build frontend projects.
+6. Create a portfolio.
+
+Data Analyst
+
+Required skills:
+Python, SQL, Excel, Statistics and Data Visualization.
+
+Learning roadmap:
+1. Learn Excel.
+2. Learn SQL.
+3. Learn Python and Pandas.
+4. Learn Statistics.
+5. Practise data visualization.
+6. Build data analysis projects.
+
+Machine Learning Engineer
+
+Required skills:
+Python, Statistics, Pandas, NumPy and Machine Learning.
+
+Learning roadmap:
+1. Learn Python.
+2. Learn Statistics.
+3. Learn NumPy and Pandas.
+4. Learn Machine Learning algorithms.
+5. Learn model evaluation.
+6. Build and deploy ML projects.
