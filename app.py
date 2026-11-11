@@ -1,5 +1,4 @@
 import os
-import ollama
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -44,7 +43,45 @@ def get_career_context(question):
     return retrieve_context(question, rag_index, rag_chunks)
 
 
+
 def generate_ai_response(question, context):
+
+    if client is None:
+        raise ValueError("OPENAI_API_KEY is not configured.")
+
+    prompt = f"""
+You are PathPilot, a professional AI career guidance assistant.
+
+Use the following retrieved career information:
+
+{context}
+
+User details:
+{question}
+
+Instructions:
+1. Give personalized career guidance.
+2. Identify missing skills.
+3. Suggest learning resources and topics.
+4. Recommend beginner projects.
+5. Give a realistic learning sequence.
+6. Use simple English.
+7. Format with headings and bullet points.
+"""
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.7
+    )
+
+    return response.choices[0].message.content.strip()
+
 
     prompt = f"""
 You are PathPilot, a professional AI career guidance assistant.
