@@ -1,15 +1,22 @@
-
+import os
 from pathlib import Path
 
 import faiss
-from sentence_transformers import SentenceTransformer
+import numpy as np
+from openai import OpenAI
 
 
 ROOT = Path(__file__).resolve().parent
 DOCS_FOLDER = ROOT / "career_docs"
 
-# Text embedding model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+def get_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY is not configured.")
+
+    return OpenAI(api_key=api_key)
 
 
 def load_documents():
@@ -17,19 +24,31 @@ def load_documents():
 
     for file_path in DOCS_FOLDER.glob("*.txt"):
         text = file_path.read_text(encoding="utf-8")
-        documents.append(text)
+        if text.strip():
+            documents.append(text)
 
     return documents
 
 
 def split_text(text, chunk_size=500):
     words = text.split()
-    chunks = []
+    return [
+        " ".join(words[i:i + chunk_size])
+        for i in range(0, len(words), chunk_size)
+    ]
 
-    for i in range(0, len(words), chunk_size):
-        chunks.append(" ".join(words[i:i + chunk_size]))
 
-    return chunks
+def get_embeddings(texts):
+    client = get_client()
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=texts
+    )
+
+    return np.array(
+        [item.embedding for item in response.data],
+        dtype="float32"
+    )
 
 
 def create_knowledge_index():
@@ -42,27 +61,21 @@ def create_knowledge_index():
     if not chunks:
         raise ValueError("No career documents found in career_docs folder.")
 
-    embeddings = embedding_model.encode(
-        chunks,
-        convert_to_numpy=True,
-        normalize_embeddings=True
-    )
+    embeddings = get_embeddings(chunks)
+    faiss.normalize_L2(embeddings)
 
     index = faiss.IndexFlatIP(embeddings.shape[1])
-    index.add(embeddings.astype("float32"))
+    index.add(embeddings)
 
     return index, chunks
 
 
 def retrieve_context(question, index, chunks, top_k=3):
-    question_embedding = embedding_model.encode(
-        [question],
-        convert_to_numpy=True,
-        normalize_embeddings=True
-    )
+    question_embedding = get_embeddings([question])
+    faiss.normalize_L2(question_embedding)
 
     scores, indices = index.search(
-        question_embedding.astype("float32"),
+        question_embedding,
         min(top_k, len(chunks))
     )
 
