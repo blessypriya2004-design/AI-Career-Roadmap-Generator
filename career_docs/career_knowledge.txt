@@ -1,0 +1,20 @@
+PYTHON FULL STACK DEVELOPER
+
+A Python Full Stack Developer develops frontend and backend applications.
+
+Required skills:
+Python, HTML, CSS, JavaScript, Flask, Django, SQL, REST APIs, Git and GitHub.
+
+Learning roadmap:
+Week 1: Python basics, variables, loops and functions.
+Week 2: HTML, CSS and JavaScript.
+Week 3: Flask and backend development.
+Week 4: SQL and database operations.
+Week 5: REST APIs and GitHub.
+Week 6: Build a full stack project and prepare for interviews.
+
+Project ideas:
+Student Management System, Online Shopping Application, Job Portal and Personal Portfolio Website.
+
+Career preparation:
+Practice Python coding daily, build projects and prepare for technical interviews.

@@ -1,29 +1,26 @@
-import os
+
 from pathlib import Path
 
-import faiss
-import numpy as np
-from openai import OpenAI
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 ROOT = Path(__file__).resolve().parent
 DOCS_FOLDER = ROOT / "career_docs"
 
 
-def get_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY is not configured.")
-
-    return OpenAI(api_key=api_key)
-
-
 def load_documents():
+    """Load all text files from career_docs folder."""
     documents = []
+
+    if not DOCS_FOLDER.exists():
+        raise FileNotFoundError(
+            f"Career documents folder not found: {DOCS_FOLDER}"
+        )
 
     for file_path in DOCS_FOLDER.glob("*.txt"):
         text = file_path.read_text(encoding="utf-8")
+
         if text.strip():
             documents.append(text)
 
@@ -31,58 +28,72 @@ def load_documents():
 
 
 def split_text(text, chunk_size=500):
+    """Split document into smaller word-based chunks."""
     words = text.split()
-    return [
-        " ".join(words[i:i + chunk_size])
-        for i in range(0, len(words), chunk_size)
-    ]
+    chunks = []
+
+    for i in range(0, len(words), chunk_size):
+        chunk = " ".join(words[i:i + chunk_size])
+
+        if chunk.strip():
+            chunks.append(chunk)
+
+    return chunks
 
 
-def get_embeddings(texts):
-    client = get_client()
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=texts
-    )
+class KnowledgeIndex:
+    """Stores TF-IDF vectors and document chunks."""
 
-    return np.array(
-        [item.embedding for item in response.data],
-        dtype="float32"
-    )
+    def __init__(self, vectorizer, matrix):
+        self.vectorizer = vectorizer
+        self.matrix = matrix
 
 
 def create_knowledge_index():
+    """Create a TF-IDF knowledge index from career documents."""
     documents = load_documents()
 
     chunks = []
+
     for document in documents:
         chunks.extend(split_text(document))
 
     if not chunks:
-        raise ValueError("No career documents found in career_docs folder.")
+        raise ValueError(
+            "No career documents found in career_docs folder."
+        )
 
-    embeddings = get_embeddings(chunks)
-    faiss.normalize_L2(embeddings)
+    vectorizer = TfidfVectorizer(
+        lowercase=True,
+        stop_words="english",
+        ngram_range=(1, 2)
+    )
 
-    index = faiss.IndexFlatIP(embeddings.shape[1])
-    index.add(embeddings)
+    matrix = vectorizer.fit_transform(chunks)
+
+    index = KnowledgeIndex(vectorizer, matrix)
 
     return index, chunks
 
 
 def retrieve_context(question, index, chunks, top_k=3):
-    question_embedding = get_embeddings([question])
-    faiss.normalize_L2(question_embedding)
+    """Retrieve the most relevant document chunks."""
+    if not question.strip():
+        return ""
 
-    scores, indices = index.search(
-        question_embedding,
-        min(top_k, len(chunks))
-    )
+    question_vector = index.vectorizer.transform([question])
+
+    similarities = cosine_similarity(
+        question_vector,
+        index.matrix
+    ).flatten()
+
+    top_indices = similarities.argsort()[::-1][:top_k]
 
     results = []
 
-    for idx in indices[0]:
-        if idx >= 0:
+    for idx in top_indices:
+        if similarities[idx] > 0:
             results.append(chunks[idx])
 
     return "\n\n".join(results)

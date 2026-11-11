@@ -1,6 +1,3 @@
 Flask>=3.0,<4.0
 gunicorn
-openai
-python-dotenv
-faiss-cpu
-numpy
+scikit-learn

@@ -1,36 +1,14 @@
 import os
 from pathlib import Path
-
 from flask import Flask, jsonify, request, send_from_directory
-from dotenv import load_dotenv
-from openai import OpenAI
-
 from rag import create_knowledge_index, retrieve_context
 
-
-# Load environment variables
 ROOT = Path(__file__).resolve().parent
 FRONTEND = ROOT
 
-load_dotenv(ROOT / ".env")
-
-# OpenAI API configuration
-API_KEY = os.getenv("OPENAI_API_KEY")
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-
-client = OpenAI(
-    api_key=API_KEY,
-    timeout=60.0,
-    max_retries=2
-) if API_KEY else None
-
 app = Flask(__name__)
 
-
-# ----------------------------------
-# RAG KNOWLEDGE BASE
-# ----------------------------------
-
+# FREE RAG KNOWLEDGE BASE
 rag_index = None
 rag_chunks = []
 
@@ -41,80 +19,6 @@ def get_career_context(question):
         rag_index, rag_chunks = create_knowledge_index()
 
     return retrieve_context(question, rag_index, rag_chunks)
-
-
-
-def generate_ai_response(question, context):
-
-    if client is None:
-        raise ValueError("OPENAI_API_KEY is not configured.")
-
-    prompt = f"""
-You are PathPilot, a professional AI career guidance assistant.
-
-Use the following retrieved career information:
-
-{context}
-
-User details:
-{question}
-
-Instructions:
-1. Give personalized career guidance.
-2. Identify missing skills.
-3. Suggest learning resources and topics.
-4. Recommend beginner projects.
-5. Give a realistic learning sequence.
-6. Use simple English.
-7. Format with headings and bullet points.
-"""
-
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.7
-    )
-
-    return response.choices[0].message.content.strip()
-
-
-    prompt = f"""
-You are PathPilot, a professional AI career guidance assistant.
-
-Use the following retrieved career information:
-
-{context}
-
-User details:
-{question}
-
-Instructions:
-1. Give personalized career guidance.
-2. Identify missing skills.
-3. Suggest learning resources and topics.
-4. Recommend beginner projects.
-5. Give a realistic learning sequence.
-6. Use simple English.
-7. Format with headings and bullet points.
-"""
-
-    response = ollama.chat(
-        model="llama3.2:3b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    return response["message"]["content"].strip()
-
 
 # ----------------------------------
 # CAREER ROLE INFORMATION
@@ -400,20 +304,10 @@ def roadmap():
             f"Current skills: {data.get('skills', '')}\n"
             f"Missing skills: {', '.join(result['skill_gaps'])}"
         )
-        # Retrieve relevant knowledge using RAG
+                # Retrieve relevant career information using free RAG
         context = get_career_context(question)
 
-        # Generate guidance using OpenAI GPT
-        try:
-            ai_guidance = generate_ai_response(question, context)
-        except Exception:
-            app.logger.exception("AI guidance generation failed")
-            ai_guidance = (
-                "AI guidance is temporarily unavailable. "
-                "Please try again later. Your basic roadmap is available."
-            )
-
-        result["ai_guidance"] = ai_guidance
+        result["ai_guidance"] = context
 
         return jsonify(result)
 
@@ -435,5 +329,14 @@ if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
         port=int(os.getenv("PORT", 5000)),
+        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    )
+import os
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5000))
+    app.run(
+        host="0.0.0.0",
+        port=port,
         debug=os.getenv("FLASK_DEBUG", "false").lower() == "true"
     )
